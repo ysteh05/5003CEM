@@ -1,0 +1,96 @@
+import random
+import datetime
+
+validBpCodes = [
+    '01', '21', '22', '23', '24',    # Johor
+    '02', '25', '26', '27',          # Kedah
+    '03', '28', '29',                # Kelantan
+    '04', '30',                      # Malacca
+    '05', '31', '59',                # Negeri Sembilan
+    '06', '32', '33',                # Pahang
+    '07', '34', '35',                # Penang
+    '08', '36', '37', '38', '39',    # Perak
+    '09', '40',                      # Perlis
+    '10', '41', '42', '43', '44',    # Selangor
+    '11', '45', '46',                # Terengganu
+    '12', '47', '48', '49',          # Sabah
+    '13', '50', '51', '52', '53',    # Sarawak
+    '14', '54', '55', '56', '57',    # FT Kuala Lumpur
+    '15', '58',                      # FT Labuan
+    '16',                            # FT Putrajaya
+    '60', '61', '62', '63', '64', '65', '66', '67', '68', '71', '72', # Countries
+    '74', '75', '76', '77', '78', '79', 
+    '81', '82', '83', '84', '85', '86', '87', '88', '89', '90', '91', '92', '93', '98', '99'
+]
+
+def folding(number):
+    num = str(number)
+    length = len(num)
+    foldingSum = 0
+    n = (length // 4)
+    for i in range(n):
+        extract = int(num[(i*4):((i+1)*4)])
+        foldingSum += extract
+    if length % 4 != 0:
+        remainDigit = length % 4
+        remainNumber = int(num[-remainDigit:])
+        foldingSum += remainNumber
+    return foldingSum
+
+def hashFunction(icNum, tableSize):
+    hashCode = folding(icNum)
+    return hashCode % tableSize
+
+def generateRandomDate(startDate, endDate):
+    timeBetweenDates = endDate - startDate
+    daysBetweenDates = timeBetweenDates.days
+    randomNumberOfDays = random.randint(0, daysBetweenDates)
+    randomDate = startDate + datetime.timedelta(days=randomNumberOfDays)
+    return randomDate
+
+def generateIcNumber():
+    startDate = datetime.date(1925, 1, 1)
+    endDate = datetime.date(2024, 12, 31)
+    dob = generateRandomDate(startDate, endDate)
+    yymmdd = dob.strftime('%y%m%d')
+    bp = random.choice(validBpCodes)
+    serial = str(random.randint(0, 9999)).zfill(4)
+    return yymmdd + bp + serial
+
+def insertIntoHashTable(icNumbers, tableSize):
+    table = [[] for _ in range(tableSize)]
+    collisions = 0
+    for ic in icNumbers:
+        hashIndex = hashFunction(ic, tableSize)
+        if table[hashIndex]:
+            collisions += 1
+        table[hashIndex].append(ic)
+    return collisions
+
+def main():
+    numRounds = 10
+    numIcNumbers = 1000
+    tableSizes = [1009, 2003]
+    totalCollisions = {size: [] for size in tableSizes}
+
+    for roundNum in range(1, numRounds + 1):
+        print(f"--- Round {roundNum} ---")
+        icNumbers = set()
+        while len(icNumbers) < numIcNumbers:
+            icNumbers.add(generateIcNumber())
+        icNumbers = list(icNumbers)
+        for size in tableSizes:
+            collisions = insertIntoHashTable(icNumbers, size)
+            totalCollisions[size].append(collisions)
+            print(f"Table size {size}: Collisions = {collisions}")
+
+    print("\n=== Summary ===")
+    for size in tableSizes:
+        avgCollisions = sum(totalCollisions[size]) / numRounds
+        print(f"Hash Table Size {size}:")
+        for roundNum, col in enumerate(totalCollisions[size], 1):
+            print(f"  Round {roundNum}: {col} collisions")
+        print(f"  Average collisions: {avgCollisions:.2f}")
+
+if __name__ == "__main__":
+    main()

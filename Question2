@@ -1,0 +1,333 @@
+class Person:
+    def __init__(self, name, gender, biography, privacy):
+        self.name = name
+        self.gender = gender
+        self.biography = biography
+        self.privacy = privacy
+
+    def __hash__(self):
+        return hash(self.name)
+
+    def __eq__(self, other):
+        if not isinstance(other, Person):
+            return NotImplemented
+        return self.name == other.name
+
+    def __repr__(self):
+        return f"Person(name='{self.name}')"
+    
+    def __str__(self):
+        return self.name
+
+class UDGraph:
+    def __init__(self, max_vertex=10):
+        self.adj_list = dict()
+        self.MAX_VERTEX = max_vertex
+    
+    def add_vertex(self, vertex):
+        if len(self.adj_list) >= self.MAX_VERTEX:
+            raise ValueError(f"Cannot add more than {self.MAX_VERTEX} vertices to the graph.")
+
+        if vertex not in self.adj_list:
+            self.adj_list[vertex] = []
+        else:
+            print(f"Warning: Vertex '{vertex}' already exists in the graph.")
+    
+    def remove_vertex(self, vertex):
+        if vertex not in self.adj_list:
+            raise ValueError("Vertex does not exist")
+        for neighbours in self.adj_list.values():
+            if vertex in neighbours:
+                neighbours.remove(vertex)
+        del self.adj_list[vertex]
+    
+    def add_edge(self, from_vertex, to_vertex):
+        if from_vertex in self.adj_list:
+            if to_vertex in self.adj_list:
+                if to_vertex not in self.adj_list[from_vertex]: # Prevent duplicate edges
+                    self.adj_list[from_vertex].append(to_vertex)
+                else:
+                    print(f"Warning: Edge from '{from_vertex}' to '{to_vertex}' already exists.")
+            else:
+                raise ValueError("To vertex is not found in the graph")
+        else:
+            raise ValueError("From vertex is not found in the graph")
+    
+    def remove_edge(self, from_vertex, to_vertex):
+        if from_vertex in self.adj_list:
+            if to_vertex in self.adj_list[from_vertex]:
+                self.adj_list[from_vertex].remove(to_vertex)
+            else:
+                raise ValueError("Edge does not exist")
+        else:
+            raise ValueError("From vertex does not exist")
+    
+    def listOutgoingAdjacentVertex(self, vertex):
+        return self.adj_list.get(vertex,[])
+    
+    def has_vertex(self, vertex):
+        return vertex in self.adj_list
+    
+    def has_edge(self, from_vertex, to_vertex):
+        if from_vertex in self.adj_list:
+            return to_vertex in self.adj_list[from_vertex]
+        return False
+    
+    def get_vertices(self):
+        return list(self.adj_list.keys())
+    
+    def get_edges(self):
+        edges = []
+        for from_node, neighbours in self.adj_list.items():
+            for to_node in neighbours:
+                edges.append((from_node, to_node))
+        return edges
+    
+    def print_adj_list(self):
+        if not self.adj_list:
+            print("Graph is empty.")
+            return
+        for vertex in self.adj_list:
+            # Use the string representation of vertices
+            neighbour_names = [str(n) for n in self.adj_list[vertex]]
+            print(f"{vertex} -> {neighbour_names}")
+
+# Helper functions for type checking and operations
+def verify_person(vertex):
+    """Verify that a vertex is a Person object"""
+    if not isinstance(vertex, Person):
+        raise TypeError("Vertex must be a Person object")
+    return vertex
+
+def create_new_person(graph):
+    """Prompts the user for details to create a new Person object and adds it to the graph."""
+    print("\n--- Create New Account ---")
+    if len(graph.adj_list) >= graph.MAX_VERTEX:
+        print(f"Error: Maximum number of accounts ({graph.MAX_VERTEX}) reached. Cannot create more.")
+        return None
+
+    name = input("Enter name: ").strip()
+    if not name:
+        print("Name cannot be empty. Account creation cancelled.")
+        return None
+    
+    # Check if a person with this name already exists
+    for person_obj in graph.get_vertices():
+        if person_obj.name == name:
+            print(f"Error: An account with the name '{name}' already exists. Please choose a different name.")
+            return None
+
+    gender = input("Enter gender (e.g., Male, Female): ").strip()
+    biography = input("Enter biography: ").strip()
+    privacy = input("Enter privacy setting (public/private): ").strip().lower()
+    while privacy not in ['public', 'private']:
+        print("Invalid privacy setting. Please enter 'public' or 'private'.")
+        privacy = input("Enter privacy setting (public/private): ").strip().lower()
+
+    try:
+        new_person = Person(name, gender, biography, privacy)
+        # Verify it's a Person object before adding
+        verify_person(new_person)
+        graph.add_vertex(new_person)
+        print(f"Account for '{name}' created successfully!")
+        return new_person
+    except ValueError as e:
+        print(f"Error creating account: {e}")
+        return None
+    except TypeError as e:
+        print(f"Error: {e}")
+        return None
+
+def find_person_by_name(graph, name):
+    """Helper function to find a Person object by name."""
+    for person_obj in graph.get_vertices():
+        if person_obj.name == name:
+            return person_obj
+    return None
+
+def view_person_details(graph):
+    """Allows viewing details of a person based on privacy settings."""
+    print("\n--- View Person Details ---")
+    person_name = input("Enter the name of the person to view: ").strip()
+    person = find_person_by_name(graph, person_name)
+
+    if person:
+        print(f"\nName: {person.name}")
+        if person.privacy == 'public':
+            print(f"Gender: {person.gender}")
+            print(f"Biography: {person.biography}")
+            print(f"Privacy: {person.privacy}")
+        else:
+            print("This account is private. Only name is visible.")
+    else:
+        print("Person not found.")
+
+def view_followed_accounts(graph):
+    """Displays the list of accounts a particular person is following."""
+    print("\n--- View Followed Accounts ---")
+    person_name = input("Enter the name of the person whose followed accounts you want to view: ").strip()
+    person = find_person_by_name(graph, person_name)
+
+    if person:
+        # Verify it's a Person object before getting adjacent vertices
+        verify_person(person)
+        followed_list = graph.listOutgoingAdjacentVertex(person)
+        if followed_list:
+            print(f"{person} is following: {[str(p) for p in followed_list]}")
+        else:
+            print(f"{person} is not following anyone.")
+    else:
+        print("Person not found.")
+
+def view_followers(graph):
+    """Displays the list of accounts that follow a particular person."""
+    print("\n--- View Followers ---")
+    person_name = input("Enter the name of the person whose followers you want to view: ").strip()
+    target_person = find_person_by_name(graph, person_name)
+
+    if target_person:
+        # Verify it's a Person object
+        verify_person(target_person)
+        followers = []
+        for p in graph.get_vertices():
+            if graph.has_edge(p, target_person):
+                followers.append(p)
+        
+        if followers:
+            print(f"Followers of {target_person}: {[str(p) for p in followers]}")
+        else:
+            print(f"{target_person} has no followers yet.")
+    else:
+        print("Person not found.")
+
+def main_menu():
+    udgraph = UDGraph(max_vertex=10)  # Set max_vertex through constructor
+    default_person = [
+        Person("John", "Male", "Software Engineer from New York", "public"),
+        Person("Emma", "Female", "Digital Artist and Designer", "public"),
+        Person("Alex", "Male", "Travel Blogger and Photographer", "private"),
+        Person("Sophia", "Female", "Fitness Instructor and Nutritionist", "public"),
+        Person("Michael", "Male", "Music Producer and DJ", "private")
+    ]
+    
+    for person in default_person:
+        # Verify it's a Person object before adding
+        verify_person(person)
+        udgraph.add_vertex(person)
+
+    while True:
+        print("\n--- CLI Menu ---")
+        print("1. Create New Account")
+        print("2. View All Account Names")
+        print("3. View Person Details")
+        print("4. Follow a Person")
+        print("5. Unfollow a Person")
+        print("6. View Followed Accounts")
+        print("7. View Followers")
+        print("8. Check if two person follow each other")
+        print("9. Exit")
+        choice = input("Enter your choice: ").strip()
+
+        if choice == '1':
+            create_new_person(udgraph)
+        elif choice == '2':
+            print("\n--- All Account Names ---")
+            vertices = udgraph.get_vertices()
+            if not vertices:
+                print("No accounts created yet.")
+            else:
+                for person in vertices:
+                    print(f"- {person}")
+        elif choice == '3':
+            view_person_details(udgraph)
+        elif choice == '4':
+            follower_name = input("Enter the name of the person who wants to follow: ").strip()
+            followed_name = input("Enter the name of the person to follow: ").strip()
+            follower = find_person_by_name(udgraph, follower_name)
+            followed = find_person_by_name(udgraph, followed_name)
+
+            if follower and followed:
+                try:
+                    # Verify both are Person objects
+                    verify_person(follower)
+                    verify_person(followed)
+                    if follower == followed:
+                        print("Error: A person cannot follow himself/herself.")
+                    else:
+                        udgraph.add_edge(follower, followed)
+                        print(f"{follower} is now following {followed}.")
+                except ValueError as e:
+                    print(f"Error: {e}")
+                except TypeError as e:
+                    print(f"Error: {e}")
+            elif follower:
+                print("Error: The person to follow not found.")
+            elif followed:
+                print("Error: The follower not found.")
+            else:
+                print("Error: Both follower and person to follow not found.")
+        elif choice == '5':
+            unfollower_name = input("Enter the name of the person who wants to unfollow: ").strip()
+            unfollowed_name = input("Enter the name of the person to unfollow: ").strip()
+            unfollower = find_person_by_name(udgraph, unfollower_name)
+            unfollowed = find_person_by_name(udgraph, unfollowed_name)
+
+            if unfollower and unfollowed:
+                try:
+                    # Verify both are Person objects
+                    verify_person(unfollower)
+                    verify_person(unfollowed)
+                    if unfollower == unfollowed:
+                        print("Error: A person cannot unfollow himself/herself.")
+                    else:
+                        udgraph.remove_edge(unfollower, unfollowed)
+                        print(f"{unfollower} has unfollowed {unfollowed}.")
+                except ValueError as e:
+                    print(f"Error: {e}")
+                except TypeError as e:
+                    print(f"Error: {e}")
+            elif unfollower:
+                print("Error: The person to unfollow not found.")
+            elif unfollowed:
+                print("Error: The unfollower not found.")
+            else:
+                print("Error: Both unfollower and person to unfollow not found.")
+        elif choice == '6':
+            view_followed_accounts(udgraph)
+        elif choice == '7':
+            view_followers(udgraph)
+        elif choice == '8':
+            person1_name = input("Enter the name of the first person: ").strip()
+            person2_name = input("Enter the name of the second person: ").strip()
+            person1 = find_person_by_name(udgraph, person1_name)
+            person2 = find_person_by_name(udgraph, person2_name)
+
+            if person1 and person2:
+                try:
+                    # Verify both are Person objects
+                    verify_person(person1)
+                    verify_person(person2)
+                    follows1_2 = udgraph.has_edge(person1, person2)
+                    follows2_1 = udgraph.has_edge(person2, person1)
+                    if follows1_2 and follows2_1:
+                        print(f"{person1} and {person2} follow each other.")
+                    else:
+                        print(f"{person1} and {person2} do not follow each other.")
+                        print(f"{person1} follows {person2}: {follows1_2}")
+                        print(f"{person2} follows {person1}: {follows2_1}")
+                except TypeError as e:
+                    print(f"Error: {e}")
+            elif person2:
+                print(f"{person1_name} not found.")
+            elif person1:
+                print(f"{person2_name} not found.")
+            else:
+                print(f"Error: Both {person1_name} and {person2_name} not found.")
+        elif choice == '9':
+            print("Exiting CLI. Goodbye!")
+            break
+        else:
+            print("Invalid choice. Please try again.")
+
+if __name__ == "__main__":
+    main_menu()

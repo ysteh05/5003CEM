@@ -1,48 +1,64 @@
+# Import necessary libraries for random number generation, multithreading, and time measurement
 import random
 import threading
 import time
 
 def generate_random_numbers():
+    # Generate a list of 100 random integers between 0 and 10,000
     return [random.randint(0, 10_000) for _ in range(100)]
 
 def multithread_round():
-    results = [None, None, None]
+    # Execute the random number generation using multiple threads and measure the execution time
+    results = [None, None, None]  # Array to store results from each thread
 
     def worker(slot_index):
+        # Worker function that each thread will execute
         results[slot_index] = generate_random_numbers()
 
-    threads = []
-    start_ns = time.perf_counter_ns()
+    threads = []  # List to keep track of threads
+    start_ns = time.perf_counter_ns()  # Start time in nanoseconds
 
+    # Create and start 3 threads
     for i in range(3):
         t = threading.Thread(target=worker, args=(i,))
         t.start()
         threads.append(t)
 
+    # Wait for all threads to complete
     for t in threads:
         t.join()
 
-    end_ns = time.perf_counter_ns()
-    return end_ns - start_ns
+    end_ns = time.perf_counter_ns()  # End time in nanoseconds
+    return end_ns - start_ns  # Return execution time in nanoseconds
 
 def non_multithread_round():
-    start_ns = time.perf_counter_ns()
+    # Execute the random number generation sequentially (without threading)
+    # and measure the execution time
+    start_ns = time.perf_counter_ns()  # Start time in nanoseconds
+    
+    # Generate random numbers 3 times sequentially
     for _ in range(3):
         generate_random_numbers()
-    end_ns = time.perf_counter_ns()
-    return end_ns - start_ns
+        
+    end_ns = time.perf_counter_ns()  # End time in nanoseconds
+    return end_ns - start_ns  # Return execution time in nanoseconds
 
 def run_tests(rounds: int = 10):
+    # Run multiple rounds of tests comparing multithreaded vs non-multithreaded execution
+    # and display the results in a formatted table
+    
+    # Lists to store execution times for each approach
     multithread_time_list = []
     non_multithread_time_list = []
 
-    # Column widths (first wide enough for “AVERAGE”)
-    width_round          = 10
-    width_multithread    = 25
-    width_non_multithread = 30
-    width_difference     = 15
-    width_percentage     = 25
+    # Column widths for table formatting
+    width_round          = 10  # Width for round number column
+    width_multithread    = 25  # Width for multithreaded time column
+    width_non_multithread = 30  # Width for non-multithreaded time column
+    width_difference     = 15  # Width for time difference column
+    width_percentage     = 25  # Width for percentage difference column
 
+    # Create and print table header
     header = (
         f"{'Round':^{width_round}} | "
         f"{'Multithreading Time (ns)':^{width_multithread}} | "
@@ -51,18 +67,24 @@ def run_tests(rounds: int = 10):
         f"{'Percentage Difference':^{width_percentage}}"
     )
     print(header)
-    print("-" * len(header))
+    print("-" * len(header))  # Print separator line
 
+    # Run the specified number of test rounds
     for round_number in range(1, rounds + 1):
+        # Measure execution times for both approaches
         multithread_time = multithread_round()
         non_multithread_time = non_multithread_round()
+        
+        # Calculate time difference and percentage improvement
         difference_time = non_multithread_time - multithread_time
         percentage_difference = difference_time / multithread_time * 100
         percentage_string = f"{percentage_difference:.2f}%"
 
+        # Store results for later summary calculations
         multithread_time_list.append(multithread_time)
         non_multithread_time_list.append(non_multithread_time)
 
+        # Print results for this round
         print(
             f"{round_number:^{width_round}} | "
             f"{multithread_time:^{width_multithread},} | "
@@ -71,14 +93,14 @@ def run_tests(rounds: int = 10):
             f"{percentage_string:^{width_percentage}}"
         )
 
-    # TOTAL row
+    # Calculate and print TOTAL row (sum of all rounds)
     total_multithread_time = sum(multithread_time_list)
     total_non_multithread_time = sum(non_multithread_time_list)
     total_difference_time = total_non_multithread_time - total_multithread_time
     total_percentage_difference = total_difference_time / total_multithread_time * 100
     total_percentage_string = f"{total_percentage_difference:.2f}%"
 
-    print("-" * len(header))
+    print("-" * len(header))  # Print separator line
     print(
         f"{'TOTAL':^{width_round}} | "
         f"{total_multithread_time:^{width_multithread},} | "
@@ -87,7 +109,7 @@ def run_tests(rounds: int = 10):
         f"{total_percentage_string:^{width_percentage}}"
     )
 
-    # AVERAGE row
+    # Calculate and print AVERAGE row (average of all rounds)
     average_multithread_time = total_multithread_time // rounds
     average_non_multithread_time = total_non_multithread_time // rounds
     average_difference_time = average_non_multithread_time - average_multithread_time
@@ -104,4 +126,5 @@ def run_tests(rounds: int = 10):
 
 
 if __name__ == "__main__":
+    # Execute the test function when script is run directly
     run_tests()

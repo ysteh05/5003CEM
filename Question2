@@ -1,47 +1,65 @@
+# Person class to represent a user in the social network system
 class Person:
     def __init__(self, name, gender, biography, privacy):
+        # Initialize a Person object with personal information
         self.name = name
         self.gender = gender
         self.biography = biography
-        self.privacy = privacy
+        self.privacy = privacy  # 'public' or 'private'
 
     def __hash__(self):
+        # Define hash method to allow Person objects to be used as dictionary keys
         return hash(self.name)
 
     def __eq__(self, other):
+        # Define equality method to compare Person objects
+        # Two Person objects are equal if they have the same name
         if not isinstance(other, Person):
             return NotImplemented
         return self.name == other.name
 
     def __repr__(self):
+        # Define representation method for debugging
         return f"Person(name='{self.name}')"
     
     def __str__(self):
+        # Define string representation method for display
         return self.name
 
+# Undirected Graph class to represent the social network
 class UDGraph:
     def __init__(self, max_vertex=10):
-        self.adj_list = dict()
-        self.MAX_VERTEX = max_vertex
+        # Initialize the graph with an adjacency list and maximum vertex limit
+        self.adj_list = dict()  # Dictionary to store vertices and their connections
+        self.MAX_VERTEX = max_vertex  # Maximum number of vertices allowed
     
     def add_vertex(self, vertex):
+        # Add a new vertex to the graph
+        # Check if maximum vertex limit is reached
         if len(self.adj_list) >= self.MAX_VERTEX:
             raise ValueError(f"Cannot add more than {self.MAX_VERTEX} vertices to the graph.")
 
+        # Add vertex if it doesn't exist already
         if vertex not in self.adj_list:
-            self.adj_list[vertex] = []
+            self.adj_list[vertex] = []  # Initialize with empty adjacency list
         else:
             print(f"Warning: Vertex '{vertex}' already exists in the graph.")
     
     def remove_vertex(self, vertex):
+        # Remove a vertex and all its connections from the graph
         if vertex not in self.adj_list:
             raise ValueError("Vertex does not exist")
+        
+        # Remove this vertex from all adjacency lists
         for neighbours in self.adj_list.values():
             if vertex in neighbours:
                 neighbours.remove(vertex)
+                
+        # Remove the vertex itself
         del self.adj_list[vertex]
     
     def add_edge(self, from_vertex, to_vertex):
+        # Add a directed edge between two vertices
         if from_vertex in self.adj_list:
             if to_vertex in self.adj_list:
                 if to_vertex not in self.adj_list[from_vertex]: # Prevent duplicate edges
@@ -54,6 +72,7 @@ class UDGraph:
             raise ValueError("From vertex is not found in the graph")
     
     def remove_edge(self, from_vertex, to_vertex):
+        # Remove a directed edge between two vertices
         if from_vertex in self.adj_list:
             if to_vertex in self.adj_list[from_vertex]:
                 self.adj_list[from_vertex].remove(to_vertex)
@@ -63,20 +82,25 @@ class UDGraph:
             raise ValueError("From vertex does not exist")
     
     def listOutgoingAdjacentVertex(self, vertex):
+        # Get list of vertices that this vertex is connected to
         return self.adj_list.get(vertex,[])
     
     def has_vertex(self, vertex):
+        # Check if a vertex exists in the graph
         return vertex in self.adj_list
     
     def has_edge(self, from_vertex, to_vertex):
+        # Check if an edge exists between two vertices
         if from_vertex in self.adj_list:
             return to_vertex in self.adj_list[from_vertex]
         return False
     
     def get_vertices(self):
+        # Get all vertices in the graph
         return list(self.adj_list.keys())
     
     def get_edges(self):
+        # Get all edges in the graph
         edges = []
         for from_node, neighbours in self.adj_list.items():
             for to_node in neighbours:
@@ -84,6 +108,7 @@ class UDGraph:
         return edges
     
     def print_adj_list(self):
+        # Print the adjacency list representation of the graph
         if not self.adj_list:
             print("Graph is empty.")
             return
@@ -95,6 +120,7 @@ class UDGraph:
 # Helper functions for type checking and operations
 def verify_person(vertex):
     """Verify that a vertex is a Person object"""
+    # Type checking to ensure only Person objects are used as vertices
     if not isinstance(vertex, Person):
         raise TypeError("Vertex must be a Person object")
     return vertex
@@ -102,10 +128,12 @@ def verify_person(vertex):
 def create_new_person(graph):
     """Prompts the user for details to create a new Person object and adds it to the graph."""
     print("\n--- Create New Account ---")
+    # Check if maximum account limit is reached
     if len(graph.adj_list) >= graph.MAX_VERTEX:
         print(f"Error: Maximum number of accounts ({graph.MAX_VERTEX}) reached. Cannot create more.")
         return None
 
+    # Get user input for account details
     name = input("Enter name: ").strip()
     if not name:
         print("Name cannot be empty. Account creation cancelled.")
@@ -120,11 +148,14 @@ def create_new_person(graph):
     gender = input("Enter gender (e.g., Male, Female): ").strip()
     biography = input("Enter biography: ").strip()
     privacy = input("Enter privacy setting (public/private): ").strip().lower()
+    
+    # Validate privacy setting
     while privacy not in ['public', 'private']:
         print("Invalid privacy setting. Please enter 'public' or 'private'.")
         privacy = input("Enter privacy setting (public/private): ").strip().lower()
 
     try:
+        # Create and add the new person to the graph
         new_person = Person(name, gender, biography, privacy)
         # Verify it's a Person object before adding
         verify_person(new_person)
@@ -140,6 +171,7 @@ def create_new_person(graph):
 
 def find_person_by_name(graph, name):
     """Helper function to find a Person object by name."""
+    # Search through all vertices to find a person with the given name
     for person_obj in graph.get_vertices():
         if person_obj.name == name:
             return person_obj
@@ -201,7 +233,10 @@ def view_followers(graph):
         print("Person not found.")
 
 def main_menu():
+    # Main function to run the social network application
     udgraph = UDGraph(max_vertex=10)  # Set max_vertex through constructor
+    
+    # Create default users for the social network
     default_person = [
         Person("John", "Male", "Software Engineer from New York", "public"),
         Person("Emma", "Female", "Digital Artist and Designer", "public"),
@@ -210,12 +245,15 @@ def main_menu():
         Person("Michael", "Male", "Music Producer and DJ", "private")
     ]
     
+    # Add default users to the graph
     for person in default_person:
         # Verify it's a Person object before adding
         verify_person(person)
         udgraph.add_vertex(person)
 
+    # Main application loop
     while True:
+        # Display menu options
         print("\n--- CLI Menu ---")
         print("1. Create New Account")
         print("2. View All Account Names")
@@ -330,4 +368,5 @@ def main_menu():
             print("Invalid choice. Please try again.")
 
 if __name__ == "__main__":
+    # Execute main menu function when script is run directly
     main_menu()

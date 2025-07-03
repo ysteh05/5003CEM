@@ -44,8 +44,7 @@ def non_multithread_round():
     return end_ns - start_ns  # Return execution time in nanoseconds
 
 def run_tests(rounds: int = 10):
-    # Run multiple rounds of tests comparing multithreaded vs non-multithreaded execution
-    # and display the results in a formatted table
+    # Run multiple rounds of tests comparing multithreaded vs non-multithreaded execution and display the results in a formatted table
     
     # Lists to store execution times for each approach
     multithread_time_list = []
